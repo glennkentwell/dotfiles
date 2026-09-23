@@ -1,0 +1,313 @@
+tap "aws/tap"
+tap "birdayz/kaf"
+tap "cloudflare/cloudflare"
+tap "databricks/tap"
+tap "deviceinsight/packages"
+tap "glasskube/tap"
+tap "hidetatz/tap"
+tap "homebrew/bundle"
+tap "homebrew/services"
+tap "int128/kubelogin"
+tap "kdash-rs/kdash"
+tap "localstack/tap"
+tap "namespacelabs/namespace"
+tap "oven-sh/bun"
+tap "peak/tap"
+tap "pulumi/tap"
+tap "redpanda-data/tap"
+tap "robusta-dev/krr"
+tap "turbot/tap"
+tap "vectordotdev/brew"
+tap "vladimirvivien/oss-tools"
+# Run your GitHub Actions locally
+brew "act"
+# Slice and dice log files on the command-line
+brew "angle-grinder"
+# CLI tool for AWS Athena service
+brew "athenacli"
+# Integrated shell for working with the AWS CLI
+brew "aws-shell"
+# Smooth out the rough edges of AWS SSO (temporarily, until AWS makes it better)
+brew "aws-sso-util"
+# Official Amazon AWS command-line interface
+brew "awscli"
+# Simple command-line tool to read AWS CloudWatch logs
+brew "awslogs"
+# Microsoft Azure CLI 2.0
+brew "azure-cli"
+# B2 Cloud Storage Command-Line Tools
+brew "b2-tools"
+# Encode and decode base64 files
+brew "base64"
+# Command-line parser for SPF and DMARC DNS records
+brew "checkdmarc"
+# Enables you to reproduce the CircleCI environment locally
+brew "circleci"
+# Manage multiple AI agents like Claude Code, Aider and Codex in your terminal
+brew "claude-squad"
+# CLI for Cloudflare API v4
+brew "cloudflare-cli4"
+# Cloudflare Tunnel client (formerly Argo Tunnel)
+brew "cloudflared"
+# Command-line tool to manage cert-manager
+brew "cmctl"
+# Get a file from an HTTP, HTTPS or FTP server
+brew "curl"
+# Secure runtime for JavaScript and TypeScript
+brew "deno"
+# Load/unload environment variables based on $PWD
+brew "direnv"
+# Text processing system for reStructuredText
+brew "docutils"
+# Embeddable SQL OLAP Database Management System
+brew "duckdb"
+# Simple command-line tool for creating clusters on Amazon EKS
+brew "eksctl"
+# Play, record, convert, and stream audio and video
+brew "ffmpeg"
+# Collection of GNU find, xargs, and locate
+brew "findutils"
+# Command-line tools for fly.io services
+brew "flyctl"
+# Command-line fuzzy finder written in Go
+brew "fzf"
+# GitHub command-line tool
+brew "gh"
+# Git extension for versioning large files
+brew "git-lfs"
+# Blazing fast terminal-ui for git written in rust
+brew "gitui"
+# Render markdown on the CLI
+brew "glow"
+# GNU Pretty Good Privacy (PGP) package
+brew "gnupg"
+# Open source programming language to build simple/reliable/efficient software
+brew "go"
+# Directory/file & DNS busting tool written in Go
+brew "gobuster"
+# Version Control Visualization Tool
+brew "gource"
+# Manage your GnuPG keys with ease!
+brew "gpg-tui"
+# Ping, but with a graph
+brew "gping"
+# Exporter for Prometheus Metrics, Loki Logs, and Tempo Traces
+brew "grafana-agent", restart_service: :changed
+# Post-modern modal text editor
+brew "helix"
+# Kubernetes package manager
+brew "helm"
+# Improved top (interactive process viewer)
+brew "htop"
+# Configurable static site generator
+brew "hugo"
+# Display an interface's bandwidth usage
+brew "iftop"
+# Calculate various network masks, etc. from a given IP address
+brew "ipcalc"
+# Lightweight and flexible command-line JSON processor
+brew "jq"
+# Little helper to run CNCF's k3s in Docker
+brew "k3d"
+# Kubernetes CLI To Manage Your Clusters In Style!
+brew "k9s"
+# Generic command-line non-JVM Apache Kafka producer and consumer
+brew "kcat"
+# Kubernetes command-line interface
+brew "kubernetes-cli"
+# Package manager for kubectl plugins
+brew "krew"
+# LastPass command-line interface tool
+brew "lastpass-cli"
+# Lazier way to manage everything docker
+brew "lazydocker"
+# Simple terminal UI for git commands
+brew "lazygit"
+# Mac App Store command-line interface
+brew "mas"
+# Show markdown documents on text terminals
+brew "mdcat"
+# Provides a formatted and highlighted view of Markdown files in Terminal
+brew "mdless"
+# Ambitious Vim-fork focused on extensibility and agility
+brew "neovim"
+# Port scanning utility for large networks
+brew "nmap"
+# Manage multiple Node.js versions
+brew "nvm"
+# Log analyzer for PostgreSQL
+brew "pgbadger"
+# Execute binaries from Python packages in isolated environments
+brew "pipx"
+# Fast, disk space efficient package manager
+brew "pnpm"
+# Object-relational database system
+brew "postgresql@14"
+# Object-relational database system
+brew "postgresql@15", restart_service: :changed
+# Password generator
+brew "pwgen"
+# Ultra-fast CSV data-wrangling toolkit
+brew "qsv"
+# Persistent key-value database, with built-in net interface
+brew "redis", restart_service: :changed
+# Search tool like grep and The Silver Searcher
+brew "ripgrep"
+# Safe, concurrent, practical language
+brew "rust"
+# Static analysis and lint tool, for (ba)sh scripts
+brew "shellcheck"
+# Advanced console-based IP subnet calculator
+brew "sipcalc"
+# Command-line interface for https://speedtest.net bandwidth tests
+brew "speedtest-cli"
+# Tail multiple Kubernetes pods & their containers
+brew "stern"
+# TCP connect to the given IP/port combo
+brew "tcping"
+# Traceroute implementation using TCP packets
+brew "tcptraceroute"
+# Tool which checks for the support of TLS/SSL ciphers and flaws
+brew "testssl"
+# Code-search similar to ack
+brew "the_silver_searcher"
+# Terminal multiplexer
+brew "tmux"
+# Display directories as trees (with optional color/HTML output)
+brew "tree"
+# Realtime plotting utility for terminal with data input from stdin
+brew "ttyplot"
+# Cost-effective and scalable monitoring solution and time series database
+brew "victoriametrics"
+# Internet file retriever
+brew "wget"
+# Passive hostname, domain, and IP lookup tool
+brew "wtfis"
+# Command-line XML and HTML beautifier and content extractor
+brew "xq"
+# Fast CSV toolkit written in Rust
+brew "xsv"
+# Linter for YAML files
+brew "yamllint"
+# Command-line tool that draw plots on the terminal
+brew "youplot"
+# Process YAML, JSON, XML, CSV and properties documents from the CLI
+brew "yq"
+# Fish-like fast/unobtrusive autosuggestions for zsh
+brew "zsh-autosuggestions"
+# Additional completion definitions for zsh
+brew "zsh-completions"
+# Tips, tricks, and examples for zsh
+brew "zsh-lovers"
+# EC2 Instance Selector is a tool to filter EC2 instance types based on resource criteria
+brew "aws/tap/ec2-instance-selector"
+# eks-node-viewer is a tool for visualizing dynamic node usage within an EKS cluster.
+brew "aws/tap/eks-node-viewer"
+brew "birdayz/kaf/kaf"
+# Command-line interface for the Databricks platform
+brew "databricks/tap/databricks"
+# A Commandline interface for Apache Kafka which provides useful features adapted from kubectl for Kubernetes.
+# Multiple kafka brokers can be configured in a config file and the active broker is also persisted within the config.
+# In addition kafkactl supports auto-completion for its commands as well as topic names.
+brew "deviceinsight/packages/kafkactl"
+# AWS Plugin for kafkactl
+brew "deviceinsight/packages/kafkactl-aws-plugin"
+# Glasskube is a cloud native package manager for Kubernetes. It includes an UI and CLI, is dependency aware and GitOps ready.
+brew "glasskube/tap/glasskube"
+# Colorize your kubectl output
+brew "hidetatz/tap/kubecolor"
+# A kubectl plugin for Kubernetes OpenID Connect authentication
+brew "int128/kubelogin/kubelogin"
+# A fast and simple dashboard for Kubernetes written in Rust
+brew "kdash-rs/kdash/kdash"
+# Localstack cli packaged using pyinstaller
+brew "localstack/tap/localstack-cli"
+# Container-optimized cloud infrastructure that just works.
+brew "namespacelabs/namespace/nsc"
+# Incredibly fast JavaScript runtime, bundler, transpiler and package manager - all in one.
+brew "oven-sh/bun/bun"
+# Parallel S3 and local filesystem execution tool
+brew "peak/tap/s5cmd"
+# A tool to convert CloudFormation Templates to Pulumi programs
+brew "pulumi/tap/cf2pulumi"
+# Generate typed CustomResources in Pulumi from Kubernetes CRDs
+brew "pulumi/tap/crd2pulumi"
+# Redpanda CLI & toolbox
+brew "redpanda-data/tap/redpanda"
+# Kubernetes Resource Recommender by Robusta
+brew "robusta-dev/krr/krr"
+# Dashboards for DevOps. Visualize cloud configurations. Assess security posture against a massive library of benchmarks. Build custom dashboards with code.
+brew "turbot/tap/powerpipe"
+# Steampipe exposes APIs and services as a high-performance relational database, giving you the ability to write SQL-based queries to explore, assess and report on dynamic data.
+brew "turbot/tap/steampipe"
+# A High-Performance Log, Metrics, and Events Router
+brew "vectordotdev/brew/vector"
+# A top-like tool to display kubernetes workload metrics
+brew "vladimirvivien/oss-tools/ktop"
+# Command-line interface for 1Password
+cask "1password-cli"
+# Write, edit, and chat about your code with AI
+cask "cursor"
+# Voice and text chat software
+cask "discord"
+cask "font-0xproto-nerd-font"
+cask "font-3270-nerd-font"
+cask "font-agave-nerd-font"
+cask "font-anonymice-nerd-font"
+cask "font-bitstream-vera-sans-mono-nerd-font"
+cask "font-comic-shanns-mono-nerd-font"
+cask "font-ubuntu-nerd-font"
+cask "font-victor-mono-nerd-font"
+cask "font-zed-mono-nerd-font"
+# Git interface focused on visual interaction
+cask "gitup-app"
+# Web browser
+cask "google-chrome"
+# Java IDE by JetBrains
+cask "intellij-idea"
+# Terminal emulator as alternative to Apple's Terminal app
+cask "iterm2"
+# JetBrains tools manager
+cask "jetbrains-toolbox"
+# End-to-end encryption software
+cask "keybase"
+# GPU-based terminal emulator
+cask "kitty"
+# Replacement for Docker Desktop
+cask "orbstack"
+# Administration and development platform for PostgreSQL
+cask "pgadmin4"
+# Collaboration platform for API development
+cask "postman"
+# Move and resize windows using keyboard shortcuts or snap areas
+cask "rectangle"
+# Text editor for code, markup and prose
+cask "sublime-text"
+# Mesh VPN based on WireGuard
+cask "tailscale-app"
+# Multimedia player
+cask "vlc"
+# Rust-based terminal
+cask "warp"
+# GPU-accelerated cross-platform terminal emulator and multiplexer
+cask "wezterm"
+# Multiplayer code editor
+cask "zed"
+# Video communication and virtual meeting platform
+cask "zoom"
+mas "Apple Configurator", id: 1037126344
+mas "Disk Space Analyzer", id: 446243721
+mas "GIPHY CAPTURE", id: 668208984
+mas "Maccy", id: 1527619437
+mas "Prime Video", id: 545519333
+mas "Slack", id: 803453959
+mas "TestFlight", id: 899247664
+mas "WhatsApp", id: 310633997
+mas "Apple", id: 1037126344
+mas "Disk", id: 446243721
+mas "GIPHY", id: 668208984
+mas "Maccy", id: 1527619437
+mas "Prime", id: 545519333
+mas "Slack", id: 803453959
+mas "TestFlight", id: 899247664
+mas "WhatsApp", id: 310633997

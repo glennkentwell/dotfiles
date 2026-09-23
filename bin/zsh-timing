@@ -1,0 +1,333 @@
+#!/usr/bin/env python3
+"""Turn zsh startup timing logs into stats and a self-contained HTML report.
+
+Reads the logs written by $ZDOTDIR/zshrc.10.timing.zsh, which look like:
+
+    20260923-0909.1790119037
+    /path/to/zsh.d/10.completions.zsh        393.21 ms
+    ...
+    ------------------------------------------------------------------------
+    TOTAL                                                         2289.66 ms
+
+Quirks handled: stdout of sourced scripts lands in the same file (junk lines),
+log files occasionally hold two concatenated runs (two shells started in the
+same second share a filename), and some runs are truncated with no TOTAL.
+The run's wall-clock time comes from the epoch field in the filename, falling
+back to the file mtime.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+
+DEFAULT_LOG_DIR = os.path.expanduser("~/.local/share/dotfiles/log")
+DEFAULT_OUT = os.path.expanduser("~/.local/share/dotfiles/timing-report.html")
+
+# zshrc.<YYYYMMDD-HHmm>.<epoch>.log  (the date part is cosmetic; epoch is truth)
+LOG_NAME_RE = re.compile(r"^zshrc\.(?P<stamp>[0-9]{8}-[0-9]{4})\.(?P<epoch>[0-9]{9,11})\.log$")
+# printf '%-60s %8.2f ms\n' -- name, then whitespace, then the number
+TIMING_RE = re.compile(r"^(?P<name>\S.*?)\s+(?P<ms>[0-9]+(?:\.[0-9]+)?)\s*ms\s*$")
+
+UNACCOUNTED = "(zshrc overhead)"
+
+
+@dataclass
+class Run:
+    run_id: str
+    t: float  # epoch seconds, shell start
+    total: float | None  # ms, None when the run was truncated
+    entries: dict[str, float] = field(default_factory=dict)  # script basename -> ms
+
+    @property
+    def parts(self) -> float:
+        return sum(self.entries.values())
+
+    @property
+    def unaccounted(self) -> float | None:
+        if self.total is None or not self.entries:
+            return None
+        return max(0.0, self.total - self.parts)
+
+
+def parse_log(path: str, mtime: float, t: float) -> list[Run]:
+    """Split one log file into runs. A TOTAL line closes a run."""
+    stem = os.path.basename(path)[len("zshrc.") : -len(".log")]
+    runs: list[Run] = []
+    entries: dict[str, float] = {}
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            lines = fh.readlines()
+    except OSError as exc:
+        print(f"warning: cannot read {path}: {exc}", file=sys.stderr)
+        return runs
+
+    def close(total: float | None) -> None:
+        if total is None and not entries:
+            return
+        suffix = f"#{len(runs) + 1}" if runs else ""
+        runs.append(Run(run_id=stem + suffix, t=t, total=total, entries=dict(entries)))
+        entries.clear()
+
+    for line in lines:
+        m = TIMING_RE.match(line.rstrip("\n"))
+        if not m:
+            continue
+        name, ms = m.group("name"), float(m.group("ms"))
+        if name == "TOTAL":
+            close(ms)
+        elif name.endswith(".zsh"):
+            entries[os.path.basename(name)] = ms
+        # anything else is stray script output that happens to end in "ms"
+    close(None)  # trailing, unterminated run
+    return runs
+
+
+def load_runs(log_dir: str) -> list[Run]:
+    runs: list[Run] = []
+    try:
+        names = os.listdir(log_dir)
+    except OSError as exc:
+        sys.exit(f"error: cannot list {log_dir}: {exc}")
+    for name in sorted(names):
+        m = LOG_NAME_RE.match(name)
+        if not m:
+            continue  # latest.log symlink, editor droppings, other shells
+        path = os.path.join(log_dir, name)
+        try:
+            mtime = os.stat(path).st_mtime
+        except OSError:
+            continue
+        runs.extend(parse_log(path, mtime, float(m.group("epoch")) or mtime))
+    runs.sort(key=lambda r: (r.t, r.run_id))
+    return runs
+
+
+# --- stats helpers ---------------------------------------------------------
+
+
+def pct(values: list[float], p: float) -> float:
+    """Percentile with linear interpolation. `values` need not be sorted."""
+    if not values:
+        return math.nan
+    s = sorted(values)
+    if len(s) == 1:
+        return s[0]
+    k = (len(s) - 1) * p
+    lo = math.floor(k)
+    hi = math.ceil(k)
+    if lo == hi:
+        return s[int(k)]
+    return s[lo] + (s[hi] - s[lo]) * (k - lo)
+
+
+def median(values: list[float]) -> float:
+    return pct(values, 0.5)
+
+
+def mean(values: list[float]) -> float:
+    return sum(values) / len(values) if values else math.nan
+
+
+def fmt_ms(v: float) -> str:
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return "-"
+    if v >= 1000:
+        return f"{v / 1000:.2f} s"
+    if v >= 10:
+        return f"{v:.0f} ms"
+    return f"{v:.2f} ms"
+
+
+# --- reporting -------------------------------------------------------------
+
+
+def script_stats(runs: list[Run]) -> list[dict]:
+    names: set[str] = set()
+    for r in runs:
+        names.update(r.entries)
+    total_mean = mean([r.total for r in runs if r.total is not None])
+    rows = []
+    for name in names:
+        vals = [r.entries[name] for r in runs if name in r.entries]
+        rows.append(
+            {
+                "name": name,
+                "runs": len(vals),
+                "median": median(vals),
+                "mean": mean(vals),
+                "p95": pct(vals, 0.95),
+                "min": min(vals),
+                "max": max(vals),
+                "share": mean(vals) / total_mean * 100 if total_mean else math.nan,
+            }
+        )
+    unacc = [r.unaccounted for r in runs if r.unaccounted is not None]
+    if unacc:
+        rows.append(
+            {
+                "name": UNACCOUNTED,
+                "runs": len(unacc),
+                "median": median(unacc),
+                "mean": mean(unacc),
+                "p95": pct(unacc, 0.95),
+                "min": min(unacc),
+                "max": max(unacc),
+                "share": mean(unacc) / total_mean * 100 if total_mean else math.nan,
+            }
+        )
+    rows.sort(key=lambda r: r["median"], reverse=True)
+    return rows
+
+
+def print_text(runs: list[Run], since: float, until: float) -> None:
+    totals = [r.total for r in runs if r.total is not None]
+    days = {time.strftime("%Y-%m-%d", time.localtime(r.t)) for r in runs}
+    print(f"zsh startup timings  {ts(since)} .. {ts(until)}")
+    print(f"{len(runs)} runs over {len(days)} days ({len(runs) - len(totals)} truncated)")
+    if totals:
+        print(
+            f"total: median {fmt_ms(median(totals))}  mean {fmt_ms(mean(totals))}  "
+            f"p95 {fmt_ms(pct(totals, 0.95))}  min {fmt_ms(min(totals))}  max {fmt_ms(max(totals))}"
+        )
+    print()
+    hdr = f"{'script':<24}{'runs':>5}{'median':>11}{'mean':>11}{'p95':>11}{'max':>11}{'share':>8}"
+    print(hdr)
+    print("-" * len(hdr))
+    for row in script_stats(runs):
+        print(
+            f"{row['name']:<24}{row['runs']:>5}{fmt_ms(row['median']):>11}"
+            f"{fmt_ms(row['mean']):>11}{fmt_ms(row['p95']):>11}{fmt_ms(row['max']):>11}"
+            f"{row['share']:>7.1f}%"
+        )
+
+
+def ts(epoch: float) -> str:
+    return time.strftime("%Y-%m-%d %H:%M", time.localtime(epoch))
+
+
+def build_payload(runs: list[Run], since: float, until: float) -> dict:
+    names: set[str] = set()
+    for r in runs:
+        names.update(r.entries)
+    # stable order: by median desc so charts and legends read slowest-first
+    order = [row["name"] for row in script_stats(runs) if row["name"] != UNACCOUNTED]
+    order += sorted(n for n in names if n not in order)
+    idx = {n: i for i, n in enumerate(order)}
+    out_runs = []
+    for r in runs:
+        vals: list[float | None] = [None] * len(order)
+        for name, ms in r.entries.items():
+            vals[idx[name]] = round(ms, 2)
+        out_runs.append(
+            {
+                "id": r.run_id,
+                "t": int(r.t),
+                "total": round(r.total, 2) if r.total is not None else None,
+                "u": round(r.unaccounted, 2) if r.unaccounted is not None else None,
+                "v": vals,
+            }
+        )
+    return {
+        "generated": int(time.time()),
+        "since": int(since),
+        "until": int(until),
+        "scripts": order,
+        "unaccounted": UNACCOUNTED,
+        "runs": out_runs,
+    }
+
+
+def render_html(payload: dict, log_dir: str) -> str:
+    here = os.path.dirname(os.path.abspath(__file__))
+    tpl = os.path.join(here, "zsh-timing-template.html")
+    with open(tpl, encoding="utf-8") as fh:
+        html = fh.read()
+    return (
+        html.replace("/*%%DATA%%*/null", json.dumps(payload, separators=(",", ":")))
+        .replace("%%LOGDIR%%", log_dir)
+        .replace("%%GENERATED%%", ts(payload["generated"]))
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(
+        prog="zsh-timing",
+        description="Stats and an HTML report for zsh startup timing logs.",
+    )
+    ap.add_argument("-d", "--days", type=float, default=30, help="window size in days (default 30)")
+    ap.add_argument("--since", help="start of window, YYYY-MM-DD or YYYY-MM-DDTHH:MM (overrides --days)")
+    ap.add_argument("--until", help="end of window, YYYY-MM-DD or YYYY-MM-DDTHH:MM")
+    ap.add_argument("--all", action="store_true", help="use every log, ignore --days")
+    ap.add_argument("-l", "--log-dir", default=DEFAULT_LOG_DIR, help=f"default {DEFAULT_LOG_DIR}")
+    ap.add_argument("-o", "--out", default=DEFAULT_OUT, help=f"HTML output path, - for stdout (default {DEFAULT_OUT})")
+    ap.add_argument("-O", "--open", action="store_true", help="open the report when done")
+    ap.add_argument("-t", "--text", action="store_true", help="print a terminal summary instead of writing HTML")
+    args = ap.parse_args(argv)
+
+    def parse_dt(s: str) -> float:
+        for fmt in ("%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(s, fmt).timestamp()
+            except ValueError:
+                continue
+        raise SystemExit(f"error: cannot parse date {s!r}")
+
+    until = parse_dt(args.until) + (86400 if len(args.until) == 10 else 0) if args.until else time.time()
+    if args.all:
+        since = 0.0
+    elif args.since:
+        since = parse_dt(args.since)
+    else:
+        since = (datetime.fromtimestamp(until) - timedelta(days=args.days)).timestamp()
+
+    all_runs = load_runs(args.log_dir)
+    if not all_runs:
+        sys.exit(f"error: no timing logs found in {args.log_dir}")
+    runs = [r for r in all_runs if since <= r.t <= until]
+    if not runs:
+        first, last = all_runs[0].t, all_runs[-1].t
+        sys.exit(
+            f"error: no runs in {ts(since)} .. {ts(until)}; "
+            f"{len(all_runs)} logs span {ts(first)} .. {ts(last)}"
+        )
+    if args.all:
+        since = runs[0].t
+
+    if args.text:
+        print_text(runs, since, until)
+        return 0
+
+    html = render_html(build_payload(runs, since, until), args.log_dir)
+    if args.out == "-":
+        sys.stdout.write(html)
+        return 0
+    out = os.path.expanduser(args.out)
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    with open(out, "w", encoding="utf-8") as fh:
+        fh.write(html)
+    totals = [r.total for r in runs if r.total is not None]
+    print(
+        f"{len(runs)} runs, {ts(since)} .. {ts(until)}"
+        + (f", median total {fmt_ms(median(totals))}" if totals else "")
+    )
+    print(out)
+    if args.open:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.run([opener, out], check=False)
+    return 0
+
+
+if __name__ == "__main__":
+    # `zsh-timing -t | head` must exit quietly, not raise BrokenPipeError
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+    sys.exit(main())

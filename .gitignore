@@ -1,0 +1,6 @@
+.sisyphus
+.secrets/*
+nohup.out
+.zsh_sessions
+.npmrc*
+.gitconfig

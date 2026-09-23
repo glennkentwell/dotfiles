@@ -1,0 +1,15 @@
+-- https://www.depesz.com/2021/06/23/a-tale-of-making-company-wide-standard-psqlrc/
+
+\set HISTCONTROL ignoreboth
+\set HISTSIZE -1
+\set IGNOREEOF 2
+\set ECHO_HIDDEN off
+\set FETCH_COUNT 1000
+\set PROMPT1 '%`pwd`:%n@%M/%/ %l %R%x%# '
+\set PROMPT1 '%n@%M/%/%R%x%# '
+
+\set today `date +%Y-%m-%d`
+
+-- \gset select now(), current_user \gset psqlrc_
+
+SET default_transaction_read_only = on
