@@ -14,7 +14,7 @@ alias tcping="nmap -Pn -np"
 alias jsc="/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc"
 
 alias cs=claude-squad
-
+alias notes='$HOME/bin/idea --edit $HOME/notes/notes.md'
 alias datestamp="date +%Y%m%d_%H%M%S"
 alias datemonth="date +%Y%m"
 alias dateday="date +%Y%m%d"
@@ -80,7 +80,7 @@ datejson() {
 }
 alias jsondate="datejson $1"
 alias jsondatewrap="datejson $1 w"
-tzdates() {
+tzdates_orig() {
     timezones=(UTC Australia/Brisbane Australia/Melbourne America/Resolute America/New_York America/Los_Angeles Europe/London)
     (for tz in $timezones; do
         printf "%s\t%s\n" "$( date -z $tz "$@" )" $tz
@@ -88,9 +88,37 @@ tzdates() {
         # dt="$( TZ=$tz dateseconds | sed -e 's/T/ /' | sed -E 's/[0-9]([+-])[0-9]/ \1/' )"
         # dt="$( TZ=$tz date -Iseconds | sed -e 's/T/ /' | sed -E 's/([-\+][0-9]+:[0-9]+)/\t\1/g' )"
         # printf "%s\t%s\n" $tz $dt
-      done) | sort -n
+      done) | sort -n | column -t
 }
-alias datestz="tzdates | column -t"
+tzdates () {
+   local -a timezones=(
+      UTC
+      Australia/Brisbane
+      Australia/Melbourne
+      America/Resolute
+      America/New_York
+      America/Los_Angeles
+      Europe/London
+   )
+   local tz hour emoji
+
+   (
+      for tz in "${timezones[@]}"; do
+         hour=$(date -z "$tz" +%H)
+
+         case "$hour" in
+            0[6-9]|1[01]) emoji="🌅" ;; # Morning:   06:00–11:59
+            1[2-6])      emoji="🌆" ;; # Afternoon: 12:00–16:59
+            1[7-9]|2[01]) emoji="🌃" ;; # Evening:   17:00–21:59
+            *)           emoji="🌙" ;; # Late:      22:00–05:59
+         esac
+
+         printf "%s\t%s %s\n" "$(date -z "$tz" "$@")" "$emoji" "$tz"
+      done
+   ) | sort -n
+}
+
+alias datestz="tzdates"
 
 which gfind >/dev/null && alias find=gfind
 

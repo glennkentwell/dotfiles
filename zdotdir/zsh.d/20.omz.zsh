@@ -76,7 +76,7 @@ export HIST_STAMPS="yyyy-mm-dd"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-export plugins=(aws brew colored-man-pages colorize docker git kubectl macos tailscale nvm)
+export plugins=(aws brew colored-man-pages colorize docker git kubectl macos tailscale nvm fzf)
 # zsh_codex dotenv
 
 export SHOW_AWS_PROMPT=false
